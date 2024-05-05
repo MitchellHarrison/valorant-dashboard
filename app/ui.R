@@ -8,9 +8,9 @@ thematic_shiny(font = "auto")
 ####### constants #######
 APP_TITLE <- "Valorant Ranked Tracker"
 BW_THEME <- "zephyr"
-# VAL_WHITE <- "#ECE8E0"
+VAL_BLACK <- "#0F1923"
 
-theme <- bs_theme(bootswatch = BW_THEME)
+theme <- bs_theme(bootswatch = BW_THEME, fg = VAL_BLACK, bg = "#fff")
 
 ###########################
 ####### START OF UI #######

@@ -17,7 +17,7 @@ VAL_RED <- "#FF4655"
 VAL_BLACK <- "#0F1923"
 
 color_line <- VAL_RED
-color_loss <- darken(VAL_RED, 0.3)
+color_loss <- VAL_RED
 color_win <- VAL_BLACK
 pal_win_loss <- c("Win" = color_win, "Loss" = color_loss)
 options(gargle_oauth_cache = ".secrets") # for authentication
