@@ -1,16 +1,23 @@
 library(bslib)
 library(DT)
 library(shiny)
+library(plotly)
+thematic::thematic_shiny()
 
 ####### constants #######
 APP_TITLE <- "Valorant Ranked Tracker"
-CURRENT_EPISODE <- 8
+BW_THEME <- "zephyr"
+
+# VAL_RED <- "#FF4655"
+# VAL_BLACK <- "#0F1923"
+# VAL_WHITE <- "#ECE8E0"
 
 ###########################
 ####### START OF UI #######
 ###########################
 
 ui <- page_navbar(
+  theme = bs_theme(bootswatch = BW_THEME),
   title = APP_TITLE,
   sidebar = sidebar(
     width = 300,
@@ -19,7 +26,7 @@ ui <- page_navbar(
     checkboxInput(
       "filter_vod",
       "Only games with a vod",
-      value = TRUE
+      value = FALSE
     ),
     
     # map filter
@@ -44,8 +51,8 @@ ui <- page_navbar(
     selectInput(
       "filter_episode",
       "Episode(s):",
-      choices = 1:CURRENT_EPISODE,
-      selected = CURRENT_EPISODE,
+      choices = NULL,
+      selected = NULL,
       multiple = TRUE
     ),
     
@@ -62,7 +69,28 @@ ui <- page_navbar(
   ####### SUMMARY PANEL #######
   
   nav_panel(
-    title = "Summary"
+    title = "Summary",
+    fluidRow(
+      column(
+        width = 6,
+        card(
+          height = 300,
+          plotOutput("plt_winrate"),
+        ),
+        # textOutput("most_played_agent"),
+        # textOutput("top_agent_game_count"),
+        # textOutput("top_agent_winrate")
+        card(plotOutput("plt_headshot_kdr"))
+      ),
+      column(
+        width = 6,
+        card(plotOutput("plt_map_kdr")),
+        card(
+          height = 300,
+          plotOutput("plt_dmg_delta")
+        )
+      )
+    )
   ),
   
   ####### DATA PANEL ########
