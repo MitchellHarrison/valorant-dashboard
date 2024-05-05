@@ -17,7 +17,7 @@ options(gargle_oauth_cache = ".secrets") # for authentication
 
 # gs4_auth() # comment out if app is working
 gs4_deauth()
-gs4_auth(cache = ".secrets", email = "mitchha22ison@gmail.com")
+gs4_auth(cache = ".secrets", email = Sys.getenv("EMAIL"))
 
 # read data from Google Sheets
 DATA_URL <- paste0(
