@@ -1,14 +1,23 @@
 library(DT)
+library(glue)
 library(googlesheets4)
+library(janitor)
+library(plotly)
 library(shiny)
 library(tidyverse)
 library(yaml)
 
-# authenticating with Google
-# should only be necessary once, but no need to comment out these lines
-SECRETS <- read_yaml("../secrets.yaml")
-AUTH_EMAIL <- SECRETS$EMAIL
-gs4_auth(email = AUTH_EMAIL)
+PLOT_FONT_SIZE <- 15
+PLOT_FONT <- list(family = "Inter")
+options(gargle_oauth_cache = ".secrets") # for authentication
+
+####### authenticating with Google #######
+# Run gs4_auth() once, authenticate using the browser window that appears,
+# and if the app runs for you, you can permanently re-comment it out.
+
+# gs4_auth() # comment out if app is working
+gs4_deauth()
+gs4_auth(cache = ".secrets", email = "mitchha22ison@gmail.com")
 
 # read data from Google Sheets
 DATA_URL <- paste0(
@@ -22,6 +31,7 @@ data <- read_sheet(DATA_URL)
 ###############################
 
 server <- function(input, output, session) {
+  # bs_themer() # for quickly scrolling through themes during development
   
   ####### FILTER DATA USING SIDEBAR FILTERS #######
   
@@ -32,7 +42,8 @@ server <- function(input, output, session) {
         agent %in% input$filter_agent,
         episode %in% input$filter_episode,
         act %in% input$filter_act
-      )
+      ) |>
+      mutate(map = factor(map))
     if (input$filter_vod) {
       sel <- filter(sel, !is.na(vod))
     }
@@ -77,10 +88,166 @@ server <- function(input, output, session) {
     )
   })
   
+  ####### SUMMARY TAB ELEMENTS #######
+  
+  # win rate plot
+  output$plt_winrate <- renderPlot({
+    top_3 <- sel_data() |>
+      group_by(agent) |>
+      summarise(n_games = n()) |>
+      arrange(desc(n_games)) |>
+      slice_head(n = 3)
+    
+    sel_data() |>
+      group_by(agent, outcome) |>
+      summarise(count = n()) |>
+      ungroup() |>
+      filter(agent %in% top_3$agent) |>
+      pivot_wider(
+        id_cols = agent, 
+        names_from = outcome, 
+        values_from = count
+        ) |>
+      mutate(winrate = Win / (Win + Loss)) |>
+      left_join(top_3) |>
+      arrange(desc(n_games)) |>
+      mutate(
+        agent = factor(agent, levels = unique(agent)) # order by number of games
+        ) |>
+      
+      ggplot(aes(x = agent, y = winrate)) +
+      geom_col(width = 0.5) +
+      geom_text(
+       aes(y = winrate + 0.06, label = glue("{n_games} games")), 
+       position = position_dodge(width = 0.9),
+       vjust = 1,
+       fontface = "bold",
+       size = 4.5
+      ) +
+      geom_hline(yintercept = 0.5, linewidth = 1) +
+      coord_cartesian(ylim = c(0,1)) +
+      theme_minimal(base_size = PLOT_FONT_SIZE) +
+      labs(
+       x = element_blank(),
+       y = "Win rate",
+       title = "Win rate of most-played agents"
+      ) +
+      theme(
+        text = element_text(family = "Inter"),
+        axis.text = element_text(size = PLOT_FONT_SIZE - 3),
+        plot.background = element_blank(),
+        panel.background = element_blank()
+      )
+  })
+  
+  # scatter plot between headshot percent and kill-death ratio
+  output$plt_headshot_kdr <- renderPlot({
+    sel_data() |>
+      filter(outcome != "Draw") |>
+      ggplot(aes(x = headshot_pct, y = kdr, color = outcome)) +
+      geom_point(size = 2, alpha = 0.5) +
+      geom_smooth(method = "lm", se = FALSE) +
+      theme_minimal(base_size = PLOT_FONT_SIZE) +
+      labs(
+        x = "Headshot %",
+        y = "Kill / death ratio",
+        title = "KDR vs headshot percentage"
+        ) +
+      theme(
+        text = element_text(family = "Inter"),
+        legend.position = "top",
+        legend.title = element_blank(),
+        axis.text = element_text(size = PLOT_FONT_SIZE - 3),
+        plot.background = element_blank(),
+        panel.background = element_blank()
+      )
+  })
+  
+  # map kdr distribution
+  output$plt_map_kdr <- renderPlot({
+    sel_data() |>
+      ggplot(aes(x = kdr, y = rev(map))) +
+      geom_boxplot() +
+      theme_minimal(base_size = PLOT_FONT_SIZE) +
+      labs(
+        x = "Kill / death ratio",
+        y = element_blank(),
+        title = "Kill / death ratio by map"
+      ) +
+      theme(
+        text = element_text(family = "Inter"),
+        legend.position = "top",
+        legend.title = element_blank(),
+        axis.text = element_text(size = PLOT_FONT_SIZE - 3),
+        plot.background = element_blank(),
+        panel.background = element_blank()
+      )
+  })
+  
+  # damage delta distribution plots
+  output$plt_dmg_delta <- renderPlot({
+    sel_data() |>
+      filter(outcome != "Draw") |>
+      ggplot(aes(x = avg_dmg_delta, fill = outcome)) + 
+      geom_density(alpha = 0.5) +
+      geom_vline(xintercept = 0, linewidth = 1) +
+      theme_minimal(base_size = PLOT_FONT_SIZE) +
+      labs(
+        x = "Average damage delta",
+        y = element_blank(),
+        title = "Damage delta distribution by outcome"
+      ) +
+      theme(
+        text = element_text(family = "Inter"),
+        legend.position = "top",
+        legend.title = element_blank(),
+        axis.text = element_text(size = PLOT_FONT_SIZE - 3),
+        plot.background = element_blank(),
+        panel.background = element_blank()
+      )
+  })
+  
+  # most-played agent
+  top <- reactive({
+    sel_data() |>
+      count(agent) |>
+      arrange(desc(n)) |>
+      slice_head(n = 1) |>
+      pull(agent)
+  })
+  output$most_played_agent <- renderText({top()})
+  
+  # most-played agent game count
+  output$top_agent_game_count <- reactive({
+    sel_data() |>
+      filter(agent == top()) |>
+      nrow()
+  })
+  
+  # most-played agent win rate
+  output$top_agent_winrate <- reactive({
+    sel_data() |>
+      filter(agent == top()) |>
+      group_by(outcome) |>
+      summarise(count = n()) |>
+      pivot_wider(names_from = outcome, values_from = count) |>
+      rowwise() |>
+      mutate(
+        num_games = sum(c_across(where(is.numeric))),
+        winrate = Win / num_games
+        ) |>
+      select(winrate) |>
+      pull() |>
+      round(2)
+  })
+  
   ####### DATA TAB ELEMENTS #######
   
-  output$data_table <- renderDT(
-    sel_data(),
+  output$data_table <- renderDT({
+    sel_data() |>
+      clean_names(case = "sentence")
+    },
+    rownames = FALSE,
     options = list(scrollX = TRUE)
   )
 }
