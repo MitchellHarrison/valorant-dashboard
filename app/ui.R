@@ -1,23 +1,23 @@
 library(bslib)
 library(DT)
 library(shiny)
+library(thematic)
 library(plotly)
-thematic::thematic_shiny()
+thematic_shiny(font = "auto")
 
 ####### constants #######
 APP_TITLE <- "Valorant Ranked Tracker"
 BW_THEME <- "zephyr"
-
-# VAL_RED <- "#FF4655"
-# VAL_BLACK <- "#0F1923"
 # VAL_WHITE <- "#ECE8E0"
+
+theme <- bs_theme(bootswatch = BW_THEME)
 
 ###########################
 ####### START OF UI #######
 ###########################
 
 ui <- page_navbar(
-  theme = bs_theme(bootswatch = BW_THEME),
+  theme = theme,
   title = APP_TITLE,
   sidebar = sidebar(
     width = 300,

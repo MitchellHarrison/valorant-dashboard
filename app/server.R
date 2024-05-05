@@ -1,14 +1,25 @@
+library(bslib)
+library(colorspace)
 library(DT)
 library(glue)
 library(googlesheets4)
 library(janitor)
 library(plotly)
 library(shiny)
+library(thematic)
 library(tidyverse)
 library(yaml)
+source("ui.R")
 
 PLOT_FONT_SIZE <- 15
 PLOT_FONT <- list(family = "Inter")
+VAL_RED <- "#FF4655"
+VAL_BLACK <- "#0F1923"
+
+color_line <- VAL_RED
+color_loss <- darken(VAL_RED, 0.3)
+color_win <- VAL_BLACK
+pal_win_loss <- c("Win" = color_win, "Loss" = color_loss)
 options(gargle_oauth_cache = ".secrets") # for authentication
 
 ####### authenticating with Google #######
@@ -92,7 +103,7 @@ server <- function(input, output, session) {
   
   # win rate plot
   output$plt_winrate <- renderPlot({
-    top_3 <- sel_data() |>
+    top <- sel_data() |>
       group_by(agent) |>
       summarise(n_games = n()) |>
       arrange(desc(n_games)) |>
@@ -102,29 +113,30 @@ server <- function(input, output, session) {
       group_by(agent, outcome) |>
       summarise(count = n()) |>
       ungroup() |>
-      filter(agent %in% top_3$agent) |>
+      filter(agent %in% top$agent) |>
       pivot_wider(
         id_cols = agent, 
         names_from = outcome, 
         values_from = count
         ) |>
       mutate(winrate = Win / (Win + Loss)) |>
-      left_join(top_3) |>
+      left_join(top) |>
       arrange(desc(n_games)) |>
       mutate(
         agent = factor(agent, levels = unique(agent)) # order by number of games
         ) |>
       
       ggplot(aes(x = agent, y = winrate)) +
-      geom_col(width = 0.5) +
+      geom_col(width = 0.5, fill = lighten(VAL_BLACK, 0.5)) +
+      geom_hline(yintercept = 0.5, linewidth = 1, color = color_line) +
       geom_text(
-       aes(y = winrate + 0.06, label = glue("{n_games} games")), 
+       aes(y = winrate + 0.08, label = glue("{n_games} games")), 
        position = position_dodge(width = 0.9),
        vjust = 1,
        fontface = "bold",
-       size = 4.5
+       size = 4.5,
+       color = VAL_BLACK
       ) +
-      geom_hline(yintercept = 0.5, linewidth = 1) +
       coord_cartesian(ylim = c(0,1)) +
       theme_minimal(base_size = PLOT_FONT_SIZE) +
       labs(
@@ -145,8 +157,9 @@ server <- function(input, output, session) {
     sel_data() |>
       filter(outcome != "Draw") |>
       ggplot(aes(x = headshot_pct, y = kdr, color = outcome)) +
-      geom_point(size = 2, alpha = 0.5) +
+      geom_point(size = 2, alpha = 0.3) +
       geom_smooth(method = "lm", se = FALSE) +
+      scale_color_manual(values = pal_win_loss) +
       theme_minimal(base_size = PLOT_FONT_SIZE) +
       labs(
         x = "Headshot %",
@@ -167,7 +180,9 @@ server <- function(input, output, session) {
   output$plt_map_kdr <- renderPlot({
     sel_data() |>
       ggplot(aes(x = kdr, y = rev(map))) +
-      geom_boxplot() +
+      geom_boxplot(color = VAL_BLACK) +
+      geom_vline(xintercept = 1, linewidth = 0.8, color = color_line) +
+      scale_x_continuous(breaks = 0:round(max(sel_data()$kdr), 0)) +
       theme_minimal(base_size = PLOT_FONT_SIZE) +
       labs(
         x = "Kill / death ratio",
@@ -189,9 +204,10 @@ server <- function(input, output, session) {
     sel_data() |>
       filter(outcome != "Draw") |>
       ggplot(aes(x = avg_dmg_delta, fill = outcome)) + 
-      geom_density(alpha = 0.5) +
-      geom_vline(xintercept = 0, linewidth = 1) +
+      geom_density(alpha = 0.4, color = VAL_BLACK) +
+      geom_vline(xintercept = 0, linewidth = 1, color = color_line) +
       theme_minimal(base_size = PLOT_FONT_SIZE) +
+      scale_fill_manual(values = pal_win_loss) +
       labs(
         x = "Average damage delta",
         y = element_blank(),
