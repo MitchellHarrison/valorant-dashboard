@@ -129,13 +129,14 @@ server <- function(input, output, session) {
       ggplot(aes(x = agent, y = winrate)) +
       geom_col(width = 0.5, fill = lighten(VAL_BLACK, 0.5)) +
       geom_hline(yintercept = 0.5, linewidth = 1, color = color_line) +
-      geom_text(
-       aes(y = winrate + 0.08, label = glue("{n_games} games")), 
-       position = position_dodge(width = 0.9),
+      geom_label(
+       aes(y = winrate, label = glue("{n_games} games")), 
        vjust = 1,
        fontface = "bold",
        size = 4.5,
-       color = VAL_BLACK
+       color = VAL_BLACK,
+       label.size = 0,
+       nudge_y = 0.1
       ) +
       coord_cartesian(ylim = c(0,1)) +
       theme_minimal(base_size = PLOT_FONT_SIZE) +
