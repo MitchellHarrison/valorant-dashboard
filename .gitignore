@@ -4,5 +4,6 @@
 .Ruserdata
 *.Rproj
 
-secrets.yaml
+rsconnect/
 test.qmd
+.secrets

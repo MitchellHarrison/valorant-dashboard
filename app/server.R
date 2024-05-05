@@ -9,12 +9,15 @@ library(yaml)
 
 PLOT_FONT_SIZE <- 15
 PLOT_FONT <- list(family = "Inter")
+options(gargle_oauth_cache = ".secrets") # for authentication
 
-# authenticating with Google
-# should only be necessary once, but no need to comment out these lines
-SECRETS <- read_yaml("../secrets.yaml")
-AUTH_EMAIL <- SECRETS$EMAIL
-gs4_auth(email = AUTH_EMAIL)
+####### authenticating with Google #######
+# Run gs4_auth() once, authenticate using the browser window that appears,
+# and if the app runs for you, you can permanently re-comment it out.
+
+# gs4_auth() # comment out if app is working
+gs4_deauth()
+gs4_auth(cache = ".secrets", email = "mitchha22ison@gmail.com")
 
 # read data from Google Sheets
 DATA_URL <- paste0(
