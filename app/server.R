@@ -7,6 +7,7 @@ library(janitor)
 library(plotly)
 library(shiny)
 library(thematic)
+library(tidymodels)
 library(tidyverse)
 library(yaml)
 source("ui.R")
@@ -20,6 +21,11 @@ color_line <- VAL_RED
 color_loss <- VAL_RED
 color_win <- VAL_BLACK
 pal_win_loss <- c("Win" = color_win, "Loss" = color_loss)
+model_options <- c("Agent" = "agent", "Map" = "map", "Kills" = "kills", 
+                   "Deaths" = "deaths", "Assists" = "assists", 
+                   "K/D Ratio" = "kdr", "Avg. Damage Delta" = "avg_dmg_delta", 
+                   "Headshot %" = "headshot_pct", "Avg. Damage" = "avg_dmg", 
+                   "ACS" = "acs", "Frag Number" = "num_frag")
 options(gargle_oauth_cache = ".secrets") # for authentication
 
 ####### authenticating with Google #######
@@ -256,6 +262,32 @@ server <- function(input, output, session) {
       select(winrate) |>
       pull() |>
       round(2)
+  })
+  
+  ####### MODEL TAB ELEMENTS #######
+  
+  model <- reactive({
+    cols <- unname(model_options[input$model_factors])
+    model_data <- sel_data() |>
+      filter(outcome != "Draw") |>
+      select(c(outcome, cols)) |>
+      mutate(outcome = factor(outcome, levels = c("Win", "Loss")))
+    
+    data_split <- initial_split(model_data, prop = 0.8)
+    train <- training(data_split)
+    test <- testing(data_split)
+    
+    logistic_reg() |>
+      set_engine("glm") |>
+      set_mode("classification") |>
+      fit(outcome ~ ., data = train)
+  })
+  
+  output$significant_factors <- renderDT({
+    alpha <- input$model_alpha
+    tidy(model(), exponentitate = TRUE) |>
+      filter(p.value < alpha) |>
+      arrange(p.value)
   })
   
   ####### DATA TAB ELEMENTS #######

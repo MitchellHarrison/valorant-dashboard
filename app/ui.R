@@ -3,12 +3,17 @@ library(DT)
 library(shiny)
 library(thematic)
 library(plotly)
+set.seed(8012017)
 thematic_shiny(font = "auto")
 
 ####### constants #######
 APP_TITLE <- "Valorant Ranked Tracker"
 BW_THEME <- "zephyr"
 VAL_BLACK <- "#0F1923"
+model_options <- c("Agent", "Map", "Kills", "Deaths", "Assists", "K/D Ratio",
+                   "Avg. Damage Delta", "Headshot %", "Avg. Damage", "ACS",
+                   "Frag Number")
+model_options <- sort(model_options)
 
 theme <- bs_theme(bootswatch = BW_THEME, fg = VAL_BLACK, bg = "#fff")
 
@@ -77,9 +82,6 @@ ui <- page_navbar(
           height = 300,
           plotOutput("plt_winrate"),
         ),
-        # textOutput("most_played_agent"),
-        # textOutput("top_agent_game_count"),
-        # textOutput("top_agent_winrate")
         card(plotOutput("plt_headshot_kdr"))
       ),
       column(
@@ -89,6 +91,36 @@ ui <- page_navbar(
           height = 300,
           plotOutput("plt_dmg_delta")
         )
+      )
+    )
+  ),
+  
+  ####### MODELLING PANEL #######
+  nav_panel(
+    title = "Modelling",
+    fluidRow(
+      column(
+        width = 3,
+        selectInput(
+          "model_factors",
+          "Factors:",
+          choices = model_options,
+          selected = model_options,
+          multiple = TRUE
+        ),
+        sliderInput(
+          "model_alpha",
+          "Confidence level:",
+          min = 0.01,
+          max = 0.2,
+          value = 0.05,
+          step = 0.01,
+          ticks = FALSE
+        )
+      ),
+      column(
+        width = 9,
+        DTOutput("significant_factors")        
       )
     )
   ),
