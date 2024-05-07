@@ -299,20 +299,43 @@ server <- function(input, output, session) {
       clean_names(case = "sentence")
   }, options = list(dom = "t"))
   
-  output$conf_matrix <- renderDT({
-    preds <- predict(model(), test_data(), type = "class")$.pred_class
-    results <- test_data() |>
+  preds <- reactive({predict(model(), test_data(), type = "class")$.pred_class})
+  pred_probs <- reactive({predict(model(), test_data(), type = "prob")})
+  
+  results <- reactive({
+    test_data() |>
       select(outcome) |>
-      bind_cols(preds) |>
+      bind_cols(preds()) |>
+      bind_cols(pred_probs()) |>
       rename(truth = "outcome", predicted = "...2")
-    
-    mat <- conf_mat(results, truth = truth, estimate = predicted)$table
+  })
+  
+  output$conf_matrix <- renderDT({
+    mat <- conf_mat(results(), truth = truth, estimate = predicted)$table
     mat |>
       as.matrix() |>
       datatable(
         rownames = FALSE,
         options = list(dom = "t")
       )
+  })
+  
+  output$roc_curve <- renderPlot({
+    auc <- roc_auc(results(), truth = truth, .pred_Win)$.estimate
+    results() |>
+      roc_curve(truth = truth, .pred_Win) |>
+      ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+      geom_path(linewidth = 1) +
+      geom_abline(lty = 3) +
+      coord_equal() +
+      theme_minimal(base_size = PLOT_FONT_SIZE) +
+      labs(
+        x = "1 - Specificity",
+        y = "Sensitivity",
+        title = "ROC Curve",
+        subtitle = paste("AUC =", round(auc, 3))
+      ) +
+      theme(axis.text = element_text(size = PLOT_FONT_SIZE - 3))
   })
   
   ####### DATA TAB ELEMENTS #######

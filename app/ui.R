@@ -139,6 +139,9 @@ ui <- page_navbar(
             h5("Model performance"),
             DTOutput("conf_matrix")
           )
+        ),
+        fluidRow(
+          plotOutput("roc_curve")
         )
       )
     )
