@@ -65,8 +65,8 @@ ui <- page_navbar(
     selectInput(
       "filter_act",
       "Act(s):",
-      choices = 1:3,
-      selected = 1:3,
+      choices = NULL,
+      selected = NULL,
       multiple = TRUE
     )
   ),

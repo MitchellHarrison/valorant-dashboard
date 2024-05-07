@@ -10,7 +10,6 @@ library(thematic)
 library(tidymodels)
 library(tidyverse)
 library(yaml)
-source("ui.R")
 
 PLOT_FONT_SIZE <- 15
 PLOT_FONT <- list(family = "Inter")
@@ -43,6 +42,11 @@ DATA_URL <- paste0(
 )
 data <- read_sheet(DATA_URL)
 
+agents <- sort(unique(data$agent))
+maps <- sort(unique(data$map))
+episodes <- unique(data$episode)
+acts <- unique(data$act)
+
 ###############################
 ####### START OF SERVER #######
 ###############################
@@ -69,16 +73,16 @@ server <- function(input, output, session) {
   
   ####### DYNAMIC FILTER OPTIONS BASED ON DATA #######
   
-  observe({
+  shiny::observe({
     updateSelectInput(
-      session, 
-      "filter_map", 
+      session = session, 
+      inputId = "filter_map", 
       choices = sort(unique(data$map)),
       selected = sort(unique(data$map))
     )
   })
   
-  observe({
+  shiny::observe({
     updateSelectInput(
       session, 
       "filter_agent", 
@@ -87,7 +91,7 @@ server <- function(input, output, session) {
     )
   })
   
-  observe({
+  shiny::observe({
     updateSelectInput(
       session,
       "filter_episode", 
@@ -96,7 +100,7 @@ server <- function(input, output, session) {
     )
   })
   
-  observe({
+  shiny::observe({
     updateSelectInput(
       session,
       "filter_act", 
@@ -287,7 +291,8 @@ server <- function(input, output, session) {
     alpha <- input$model_alpha
     tidy(model(), exponentitate = TRUE) |>
       filter(p.value < alpha) |>
-      arrange(p.value)
+      arrange(p.value) |>
+      mutate(across(2:5, signif, digits = 3))
   })
   
   ####### DATA TAB ELEMENTS #######
