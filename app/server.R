@@ -5,11 +5,13 @@ library(glue)
 library(googlesheets4)
 library(janitor)
 library(plotly)
+library(pROC)
 library(shiny)
 library(thematic)
 library(tidymodels)
 library(tidyverse)
 library(yaml)
+set.seed(8012017)
 
 PLOT_FONT_SIZE <- 15
 PLOT_FONT <- list(family = "Inter")
@@ -40,12 +42,8 @@ DATA_URL <- paste0(
   "https://docs.google.com/spreadsheets/d/1EdN0USO2oTRaY77LUpduruFPNn",
   "_00L8Ea8wjGBiZybY/edit?usp=sharing"
 )
-data <- read_sheet(DATA_URL)
-
-agents <- sort(unique(data$agent))
-maps <- sort(unique(data$map))
-episodes <- unique(data$episode)
-acts <- unique(data$act)
+data <- read_sheet(DATA_URL) |>
+  mutate(outcome = relevel(factor(outcome), ref = "Win"))
 
 ###############################
 ####### START OF SERVER #######
@@ -270,21 +268,25 @@ server <- function(input, output, session) {
   
   ####### MODEL TAB ELEMENTS #######
   
-  model <- reactive({
+  data_split <- reactive({
+    initial_split(sel_data())
     cols <- unname(model_options[input$model_factors])
     model_data <- sel_data() |>
       filter(outcome != "Draw") |>
       select(c(outcome, cols)) |>
       mutate(outcome = factor(outcome, levels = c("Win", "Loss")))
     
-    data_split <- initial_split(model_data, prop = 0.8)
-    train <- training(data_split)
-    test <- testing(data_split)
-    
+    initial_split(model_data, prop = input$prop_train / 100)
+  })
+  
+  train_data <- reactive({training(data_split())})
+  test_data <- reactive({testing(data_split())})
+  
+  model <- reactive({
     logistic_reg() |>
       set_engine("glm") |>
       set_mode("classification") |>
-      fit(outcome ~ ., data = train)
+      fit(outcome ~ ., data = train_data())
   })
   
   output$significant_factors <- renderDT({
@@ -292,7 +294,25 @@ server <- function(input, output, session) {
     tidy(model(), exponentitate = TRUE) |>
       filter(p.value < alpha) |>
       arrange(p.value) |>
-      mutate(across(2:5, signif, digits = 3))
+      mutate(across(2:5, signif, digits = 3)) |>
+      select(term, estimate, p.value) |>
+      clean_names(case = "sentence")
+  }, options = list(dom = "t"))
+  
+  output$conf_matrix <- renderDT({
+    preds <- predict(model(), test_data(), type = "class")$.pred_class
+    results <- test_data() |>
+      select(outcome) |>
+      bind_cols(preds) |>
+      rename(truth = "outcome", predicted = "...2")
+    
+    mat <- conf_mat(results, truth = truth, estimate = predicted)$table
+    mat |>
+      as.matrix() |>
+      datatable(
+        rownames = FALSE,
+        options = list(dom = "t")
+      )
   })
   
   ####### DATA TAB ELEMENTS #######

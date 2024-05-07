@@ -3,7 +3,6 @@ library(DT)
 library(shiny)
 library(thematic)
 library(plotly)
-set.seed(8012017)
 thematic_shiny(font = "auto")
 
 ####### constants #######
@@ -14,7 +13,6 @@ model_options <- c("Agent", "Map", "Kills", "Deaths", "Assists", "K/D Ratio",
                    "Avg. Damage Delta", "Headshot %", "Avg. Damage", "ACS",
                    "Frag Number")
 model_options <- sort(model_options)
-
 theme <- bs_theme(bootswatch = BW_THEME, fg = VAL_BLACK, bg = "#fff")
 
 ###########################
@@ -96,6 +94,7 @@ ui <- page_navbar(
   ),
   
   ####### MODELLING PANEL #######
+  
   nav_panel(
     title = "Modelling",
     fluidRow(
@@ -116,11 +115,31 @@ ui <- page_navbar(
           value = 0.05,
           step = 0.01,
           ticks = FALSE
+        ),
+        sliderInput(
+          "prop_train",
+          "Pct. of data for training:",
+          min = 50,
+          max = 95,
+          value = 80,
+          step = 5,
+          ticks = FALSE
         )
       ),
       column(
         width = 9,
-        DTOutput("significant_factors")        
+        fluidRow(
+          column(
+            width = 6,
+            h5("Significant factors"),
+            DTOutput("significant_factors")        
+          ),
+          column(
+            width = 3,
+            h5("Model performance"),
+            DTOutput("conf_matrix")
+          )
+        )
       )
     )
   ),
