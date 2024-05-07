@@ -5,11 +5,13 @@ library(glue)
 library(googlesheets4)
 library(janitor)
 library(plotly)
+library(pROC)
 library(shiny)
 library(thematic)
+library(tidymodels)
 library(tidyverse)
 library(yaml)
-source("ui.R")
+set.seed(8012017)
 
 PLOT_FONT_SIZE <- 15
 PLOT_FONT <- list(family = "Inter")
@@ -20,6 +22,11 @@ color_line <- VAL_RED
 color_loss <- VAL_RED
 color_win <- VAL_BLACK
 pal_win_loss <- c("Win" = color_win, "Loss" = color_loss)
+model_options <- c("Agent" = "agent", "Map" = "map", "Kills" = "kills", 
+                   "Deaths" = "deaths", "Assists" = "assists", 
+                   "K/D Ratio" = "kdr", "Avg. Damage Delta" = "avg_dmg_delta", 
+                   "Headshot %" = "headshot_pct", "Avg. Damage" = "avg_dmg", 
+                   "ACS" = "acs", "Frag Number" = "num_frag")
 options(gargle_oauth_cache = ".secrets") # for authentication
 
 ####### authenticating with Google #######
@@ -35,7 +42,8 @@ DATA_URL <- paste0(
   "https://docs.google.com/spreadsheets/d/1EdN0USO2oTRaY77LUpduruFPNn",
   "_00L8Ea8wjGBiZybY/edit?usp=sharing"
 )
-data <- read_sheet(DATA_URL)
+data <- read_sheet(DATA_URL) |>
+  mutate(outcome = relevel(factor(outcome), ref = "Win"))
 
 ###############################
 ####### START OF SERVER #######
@@ -63,16 +71,16 @@ server <- function(input, output, session) {
   
   ####### DYNAMIC FILTER OPTIONS BASED ON DATA #######
   
-  observe({
+  shiny::observe({
     updateSelectInput(
-      session, 
-      "filter_map", 
+      session = session, 
+      inputId = "filter_map", 
       choices = sort(unique(data$map)),
       selected = sort(unique(data$map))
     )
   })
   
-  observe({
+  shiny::observe({
     updateSelectInput(
       session, 
       "filter_agent", 
@@ -81,7 +89,7 @@ server <- function(input, output, session) {
     )
   })
   
-  observe({
+  shiny::observe({
     updateSelectInput(
       session,
       "filter_episode", 
@@ -90,7 +98,7 @@ server <- function(input, output, session) {
     )
   })
   
-  observe({
+  shiny::observe({
     updateSelectInput(
       session,
       "filter_act", 
@@ -256,6 +264,78 @@ server <- function(input, output, session) {
       select(winrate) |>
       pull() |>
       round(2)
+  })
+  
+  ####### MODEL TAB ELEMENTS #######
+  
+  data_split <- reactive({
+    initial_split(sel_data())
+    cols <- unname(model_options[input$model_factors])
+    model_data <- sel_data() |>
+      filter(outcome != "Draw") |>
+      select(c(outcome, cols)) |>
+      mutate(outcome = factor(outcome, levels = c("Win", "Loss")))
+    
+    initial_split(model_data, prop = input$prop_train / 100)
+  })
+  
+  train_data <- reactive({training(data_split())})
+  test_data <- reactive({testing(data_split())})
+  
+  model <- reactive({
+    logistic_reg() |>
+      set_engine("glm") |>
+      set_mode("classification") |>
+      fit(outcome ~ ., data = train_data())
+  })
+  
+  output$significant_factors <- renderDT({
+    alpha <- input$model_alpha
+    tidy(model(), exponentitate = TRUE) |>
+      filter(p.value < alpha) |>
+      arrange(p.value) |>
+      mutate(across(2:5, signif, digits = 3)) |>
+      select(term, estimate, p.value) |>
+      clean_names(case = "sentence")
+  }, options = list(dom = "t"))
+  
+  preds <- reactive({predict(model(), test_data(), type = "class")$.pred_class})
+  pred_probs <- reactive({predict(model(), test_data(), type = "prob")})
+  
+  results <- reactive({
+    test_data() |>
+      select(outcome) |>
+      bind_cols(preds()) |>
+      bind_cols(pred_probs()) |>
+      rename(truth = "outcome", predicted = "...2")
+  })
+  
+  output$conf_matrix <- renderDT({
+    mat <- conf_mat(results(), truth = truth, estimate = predicted)$table
+    mat |>
+      as.matrix() |>
+      datatable(
+        rownames = FALSE,
+        options = list(dom = "t")
+      )
+  })
+  
+  output$roc_curve <- renderPlot({
+    auc <- roc_auc(results(), truth = truth, .pred_Win)$.estimate
+    results() |>
+      roc_curve(truth = truth, .pred_Win) |>
+      ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+      geom_path(linewidth = 1) +
+      geom_abline(lty = 3) +
+      coord_equal() +
+      theme_minimal(base_size = PLOT_FONT_SIZE) +
+      labs(
+        x = "1 - Specificity",
+        y = "Sensitivity",
+        title = "ROC Curve",
+        subtitle = paste("AUC =", round(auc, 3))
+      ) +
+      theme(axis.text = element_text(size = PLOT_FONT_SIZE - 3))
   })
   
   ####### DATA TAB ELEMENTS #######
