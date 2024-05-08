@@ -40,7 +40,7 @@ TT_MODEL_FACTORS <- paste(
 TT_SIG_FACTORS <- paste(
   "These are the factors that the model finds to be significant given the",
   "selected level of confidence. Negative ESTIMATE values mean that a",
-  "decrease in that stat means a decrease in odds of winning. Lower P VALUES",
+  "decrease in that stat means an increase in odds of winning. Lower P VALUES",
   "mean a factor is more significant that factors with a higher P VALUE."
 )
 TT_MODEL_PERF <- paste(
