@@ -135,13 +135,19 @@ ui <- page_navbar(
             DTOutput("significant_factors")        
           ),
           column(
-            width = 3,
+            width = 6,
             h5("Model performance"),
             DTOutput("conf_matrix")
           )
         ),
         fluidRow(
-          plotOutput("roc_curve")
+          column(
+            width = 6
+          ),
+          column(
+            width = 6,
+            card(plotOutput("roc_curve"))
+          )
         )
       )
     )

@@ -268,20 +268,23 @@ server <- function(input, output, session) {
   
   ####### MODEL TAB ELEMENTS #######
   
+  # split data into testing/training data
   data_split <- reactive({
-    initial_split(sel_data())
     cols <- unname(model_options[input$model_factors])
     model_data <- sel_data() |>
       filter(outcome != "Draw") |>
       select(c(outcome, cols)) |>
-      mutate(outcome = factor(outcome, levels = c("Win", "Loss")))
-    
+      mutate(
+        outcome = factor(outcome, levels = c("Win", "Loss")),
+        outcome = relevel(outcome, ref = "Win") 
+      )
     initial_split(model_data, prop = input$prop_train / 100)
   })
   
   train_data <- reactive({training(data_split())})
   test_data <- reactive({testing(data_split())})
   
+  # construct the model
   model <- reactive({
     logistic_reg() |>
       set_engine("glm") |>
@@ -289,9 +292,10 @@ server <- function(input, output, session) {
       fit(outcome ~ ., data = train_data())
   })
   
+  # find significant factors
   output$significant_factors <- renderDT({
     alpha <- input$model_alpha
-    tidy(model(), exponentitate = TRUE) |>
+    tidy(model()) |>
       filter(p.value < alpha) |>
       arrange(p.value) |>
       mutate(across(2:5, signif, digits = 3)) |>
@@ -299,6 +303,7 @@ server <- function(input, output, session) {
       clean_names(case = "sentence")
   }, options = list(dom = "t"))
   
+  # predict with the model
   preds <- reactive({predict(model(), test_data(), type = "class")$.pred_class})
   pred_probs <- reactive({predict(model(), test_data(), type = "prob")})
   
@@ -310,6 +315,7 @@ server <- function(input, output, session) {
       rename(truth = "outcome", predicted = "...2")
   })
   
+  # create confusion matrix
   output$conf_matrix <- renderDT({
     mat <- conf_mat(results(), truth = truth, estimate = predicted)$table
     mat |>
@@ -320,6 +326,7 @@ server <- function(input, output, session) {
       )
   })
   
+  # plot the ROC curve with AOC values
   output$roc_curve <- renderPlot({
     auc <- roc_auc(results(), truth = truth, .pred_Win)$.estimate
     results() |>
@@ -332,14 +339,14 @@ server <- function(input, output, session) {
       labs(
         x = "1 - Specificity",
         y = "Sensitivity",
-        title = "ROC Curve",
-        subtitle = paste("AUC =", round(auc, 3))
+        title = paste0("ROC Curve (AUC = ", round(auc, 3), ")")
       ) +
       theme(axis.text = element_text(size = PLOT_FONT_SIZE - 3))
   })
   
   ####### DATA TAB ELEMENTS #######
   
+  # output raw data table
   output$data_table <- renderDT({
     sel_data() |>
       clean_names(case = "sentence")
