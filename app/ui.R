@@ -78,8 +78,8 @@ ui <- page_navbar(
     selectInput(
       "filter_map",
       "Maps:",
-      choices = NULL,
-      selected = NULL,
+      choices = c("Ascent"),
+      selected = "Ascent",
       multiple = TRUE
     ) |>
       tooltip(TT_HOW_TO_DELETE),
@@ -88,8 +88,8 @@ ui <- page_navbar(
     selectInput(
       "filter_agent",
       "Agents:",
-      choices = NULL,
-      selected = NULL,
+      choices = c("Cypher"),
+      selected = "Cypher",
       multiple = TRUE
     ) |>
       tooltip(TT_HOW_TO_DELETE),
