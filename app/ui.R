@@ -110,7 +110,7 @@ ui <- page_navbar(
       "Act(s):",
       min = 1,
       max = 3,
-      value = c(1,8),
+      value = c(1,3),
       ticks = FALSE
     )
   ),
