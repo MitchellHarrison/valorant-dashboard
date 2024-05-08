@@ -56,12 +56,16 @@ server <- function(input, output, session) {
   ####### FILTER DATA USING SIDEBAR FILTERS #######
   
   sel_data <- reactive({
+    min_ep <- input$filter_episode[1]
+    max_ep <- input$filter_episode[2]
+    min_act <- input$filter_act[1]
+    max_act <- input$filter_act[2]
     sel <- data |>
       filter(
         map %in% input$filter_map,
         agent %in% input$filter_agent,
-        episode %in% input$filter_episode,
-        act %in% input$filter_act
+        episode >= min_ep & episode <= max_ep,
+        act >= min_act & act <= max_act
       ) |>
       mutate(map = factor(map))
     if (input$filter_vod) {
@@ -91,20 +95,22 @@ server <- function(input, output, session) {
   })
   
   shiny::observe({
-    updateSelectInput(
+    updateSliderInput(
       session,
       "filter_episode", 
-      choices = sort(unique(data$episode)),
-      selected = sort(unique(data$episode))
+      min = min(data$episode),
+      max = max(data$episode),
+      value = c(min(data$episode), max(data$episode))
     )
   })
   
   shiny::observe({
-    updateSelectInput(
+    updateSliderInput(
       session,
       "filter_act", 
-      choices = sort(unique(data$act)),
-      selected = sort(unique(data$act))
+      min = min(data$act),
+      max = max(data$act),
+      value = c(min(data$act), max(data$episode))
     )
   })
   

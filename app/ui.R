@@ -95,24 +95,24 @@ ui <- page_navbar(
       tooltip(TT_HOW_TO_DELETE),
     
     # episode filter
-    selectInput(
+    sliderInput(
       "filter_episode",
       "Episode(s):",
-      choices = NULL,
-      selected = NULL,
-      multiple = TRUE
-    ) |>
-      tooltip(TT_HOW_TO_DELETE),
+      min = 1,
+      max = 8,
+      value = c(1,8),
+      ticks = FALSE
+    ),
     
     # act filter
-    selectInput(
+    sliderInput(
       "filter_act",
       "Act(s):",
-      choices = NULL,
-      selected = NULL,
-      multiple = TRUE
-    ) |>
-      tooltip(TT_HOW_TO_DELETE)
+      min = 1,
+      max = 3,
+      value = c(1,8),
+      ticks = FALSE
+    )
   ),
   
   ####### SUMMARY PANEL #######
