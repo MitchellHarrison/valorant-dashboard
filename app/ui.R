@@ -112,6 +112,39 @@ ui <- page_navbar(
       max = 3,
       value = c(1,3),
       ticks = FALSE
+    ),
+    
+    # scoreboard position filter
+    sliderInput(
+      "filter_n_frag",
+      "Scoreboard Position:",
+      min = 1,
+      max = 5,
+      value = c(1,5),
+      ticks = FALSE,
+      step = 1
+    ),
+    
+    # kdr filter
+    sliderInput(
+      "filter_kdr",
+      "Kill / Death Ratio:",
+      min = 0,
+      max = 10,
+      value = c(0,10),
+      ticks = FALSE,
+      step = 0.1
+    ),
+    
+    # acs filter
+    sliderInput(
+      "filter_acs",
+      "Average Combat Score:",
+      min = 0,
+      max = 500,
+      value = c(0,500),
+      ticks = FALSE,
+      step = 1
     )
   ),
   

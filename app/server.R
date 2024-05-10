@@ -60,17 +60,25 @@ server <- function(input, output, session) {
     max_ep <- input$filter_episode[2]
     min_act <- input$filter_act[1]
     max_act <- input$filter_act[2]
+    min_frag <- input$filter_n_frag[1]
+    max_frag <- input$filter_n_frag[2]
+    
     sel <- data |>
       filter(
         map %in% input$filter_map,
         agent %in% input$filter_agent,
         episode >= min_ep & episode <= max_ep,
-        act >= min_act & act <= max_act
+        act >= min_act & act <= max_act,
+        kdr >= input$filter_kdr[1] & kdr <= input$filter_kdr[2],
+        acs >= input$filter_acs[1] & acs <= input$filter_acs[2],
+        #num_frag >= min_frag & num_frag <= max_frag
       ) |>
       mutate(map = factor(map))
     if (input$filter_vod) {
       sel <- filter(sel, !is.na(vod))
     }
+    print("SEL_DATA:")
+    print(sel)
     sel
   })
   
@@ -114,6 +122,26 @@ server <- function(input, output, session) {
     )
   })
   
+  shiny::observe({
+    updateSliderInput(
+      session,
+      "filter_kdr", 
+      min = min(data$kdr),
+      max = max(data$kdr),
+      value = c(min(data$kdr), max(data$kdr))
+    )
+  })
+  
+  shiny::observe({
+    updateSliderInput(
+      session,
+      "filter_acs", 
+      min = min(data$acs),
+      max = max(data$acs),
+      value = c(min(data$acs), max(data$acs))
+    )
+  })
+  
   ####### SUMMARY TAB ELEMENTS #######
   
   # win rate plot
@@ -124,18 +152,19 @@ server <- function(input, output, session) {
       arrange(desc(n_games)) |>
       slice_head(n = 3)
     
-    sel_data() |>
+    outcome_data <- sel_data() |>
       group_by(agent, outcome) |>
       summarise(count = n()) |>
       ungroup() |>
-      filter(agent %in% top$agent) |>
+      filter(
+        agent %in% top$agent) |>
       pivot_wider(
         id_cols = agent, 
         names_from = outcome, 
         values_from = count
         ) |>
-      mutate(winrate = Win / (Win + Loss)) |>
       left_join(top) |>
+      mutate(winrate = Win / n_games) |>
       arrange(desc(n_games)) |>
       mutate(
         agent = factor(agent, levels = unique(agent)) # order by number of games
