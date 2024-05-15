@@ -503,6 +503,6 @@ server <- function(input, output, session) {
     embed_url <- vod_url |>
       str_replace("youtu.be", "youtube.com/embed")
     
-    tags$iframe(src = embed_url, height = "500")
+    tags$iframe(src = embed_url, height = "500", allowfullscreen = "TRUE")
   })
 }
