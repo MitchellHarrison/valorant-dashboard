@@ -64,7 +64,7 @@ ui <- page_navbar(
     width = 300,
     shinyWidgets::chooseSliderSkin(
       skin = "Modern", 
-      color = lighten(VAL_BLACK, 0.5)
+      color = colorspace::lighten(VAL_BLACK, 0.5)
     ),
     
     h4("Global filters:", INFO_ICON) |>
