@@ -84,8 +84,8 @@ server <- function(input, output, session) {
         episode >= min_ep & episode <= max_ep,
         act >= min_act & act <= max_act,
         kdr >= min_kdr & kdr <= max_kdr,
-        acs >= min_acs & acs <= max_acs
-        #num_frag >= min_frag & num_frag <= max_frag
+        acs >= min_acs & acs <= max_acs,
+        num_frag >= min_frag & num_frag <= max_frag
       ) |>
       mutate(map = factor(map))
     if (input$filter_vod) {
