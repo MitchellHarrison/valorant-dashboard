@@ -262,13 +262,6 @@ ui <- page_navbar(
     )
   ),
   
-  ####### DATA PANEL ########
-  
-  nav_panel(
-    title = "Data",
-    DTOutput("data_table")
-  ),
-  
   ####### VOD REVIEW PANEL #######
   
   nav_panel(
@@ -291,8 +284,8 @@ ui <- page_navbar(
           ),
           column(
             width = 6, 
-            h6("Act:"),
-            textOutput("vod_act")
+            h6("Rank:"),
+            textOutput("vod_rank")
           )
         ),
         br(),
@@ -352,5 +345,12 @@ ui <- page_navbar(
         ))
       )
     )
+  ),
+  
+  ####### DATA PANEL ########
+  
+  nav_panel(
+    title = "Raw Data",
+    DTOutput("data_table")
   )
 )
