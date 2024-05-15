@@ -1,6 +1,6 @@
 name: Public Vod request
 description: Request that a VOD be made public.
-title: "[Bug]: "
+title: "Public VOD request"
 labels: ["public vod request"]
 assignees:
   - mitchellharrison
