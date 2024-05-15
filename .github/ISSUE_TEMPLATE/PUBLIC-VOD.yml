@@ -1,0 +1,24 @@
+name: Public Vod request
+description: Request that a VOD be made public.
+title: "[Bug]: "
+labels: ["public vod request"]
+assignees:
+  - mitchellharrison
+body:
+  - type: input
+    id: gameID
+    attributes:
+      label: Game ID
+      description: What is the ID of the game you would like to watch?
+      placeholder: ex. 999
+    validations:
+      required: false
+  - type: textarea
+    id: note
+    attributes:
+      label: Additional notes (optional)
+      description: Any other questions/notes about this request?
+      placeholder: None
+    validations:
+      required: false
+      
