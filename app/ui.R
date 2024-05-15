@@ -9,12 +9,11 @@ thematic_shiny(font = "auto")
 ####### constants #######
 APP_TITLE <- "Valorant Ranked Tracker"
 BW_THEME <- "zephyr"
+VAL_RED <- "#FF4655"
 VAL_BLACK <- "#0F1923"
 model_options <- c("Agent", "Map", "Kills", "Deaths", "Assists", "K/D Ratio",
                    "Avg. Damage Delta", "Headshot %", "Avg. Damage", "ACS",
                    "Frag Number")
-model_options <- sort(model_options)
-theme <- bs_theme(bootswatch = BW_THEME, fg = VAL_BLACK, bg = "#fff")
 INFO_ICON <- icon("circle-info", style = "opacity:0.3; font-size:15px")
 
 ####### tooltips #######
@@ -63,6 +62,11 @@ ui <- page_navbar(
   title = APP_TITLE,
   sidebar = sidebar(
     width = 300,
+    shinyWidgets::chooseSliderSkin(
+      skin = "Modern", 
+      color = lighten(VAL_BLACK, 0.5)
+    ),
+    
     h4("Global filters:", INFO_ICON) |>
       tooltip("These filters add or remove data across every tab."),
     
@@ -78,8 +82,8 @@ ui <- page_navbar(
     selectInput(
       "filter_map",
       "Maps:",
-      choices = c("Ascent"),
-      selected = "Ascent",
+      choices = NULL,
+      selected = NULL,
       multiple = TRUE
     ) |>
       tooltip(TT_HOW_TO_DELETE),
@@ -88,8 +92,8 @@ ui <- page_navbar(
     selectInput(
       "filter_agent",
       "Agents:",
-      choices = c("Cypher"),
-      selected = "Cypher",
+      choices = NULL,
+      selected = NULL,
       multiple = TRUE
     ) |>
       tooltip(TT_HOW_TO_DELETE),
