@@ -19,6 +19,9 @@ PLOT_FONT <- list(family = "Inter")
 VAL_RED <- "#FF4655"
 VAL_BLACK <- "#0F1923"
 
+TEST_URL <- "https://www.youtube.com/embed/Ly5Yc3nepDA?si=vgpabYevBj4qfXAS"
+TEST_URL_2 <- "https://www.youtube.com/embed/9eIsu2OLrsU"
+
 color_line <- VAL_RED
 color_loss <- VAL_RED
 color_win <- VAL_BLACK
@@ -54,7 +57,6 @@ DATA_URL <- paste0(
 )
 data <- read_sheet(DATA_URL) |>
   mutate(outcome = relevel(factor(outcome), ref = "Win"))
-
 
 ###############################
 ####### START OF SERVER #######
@@ -293,40 +295,6 @@ server <- function(input, output, session) {
     }
   })
   
-  # most-played agent
-  top <- reactive({
-    sel_data() |>
-      count(agent) |>
-      arrange(desc(n)) |>
-      slice_head(n = 1) |>
-      pull(agent)
-  })
-  output$most_played_agent <- renderText({top()})
-  
-  # most-played agent game count
-  output$top_agent_game_count <- reactive({
-    sel_data() |>
-      filter(agent == top()) |>
-      nrow()
-  })
-  
-  # most-played agent win rate
-  output$top_agent_winrate <- reactive({
-    sel_data() |>
-      filter(agent == top()) |>
-      group_by(outcome) |>
-      summarise(count = n()) |>
-      pivot_wider(names_from = outcome, values_from = count) |>
-      rowwise() |>
-      mutate(
-        num_games = sum(c_across(where(is.numeric))),
-        winrate = Win / num_games
-        ) |>
-      select(winrate) |>
-      pull() |>
-      round(2)
-  })
-  
   ####### MODEL TAB ELEMENTS #######
   
   # split data into testing/training data
@@ -415,4 +383,134 @@ server <- function(input, output, session) {
     rownames = FALSE,
     options = list(scrollX = TRUE)
   )
+  
+  ####### VOD REVIEW TAB ELEMENTS #######
+  
+  games_with_vods <- reactive({
+    sel_data() |>
+      filter(!is.na(vod))
+  })
+  
+  shiny::observe({
+    updateSelectInput(
+      session = session, 
+      inputId = "vod_id", 
+      choices = sort(games_with_vods()$game_id),
+      selected = max(games_with_vods()$game_id)
+    )
+  })
+  
+  selected_game <- reactive({ 
+    sel_data() |>
+      filter(game_id == input$vod_id) |>
+      mutate(outcome = as.character(outcome))
+  })
+  
+  output$vod_episode <- renderText({
+    selected_game() |>
+      pull(episode)
+  })
+  
+  output$vod_act <- renderText({
+    selected_game() |>
+      pull(act)
+  })
+  
+  output$vod_rank <- renderText({
+    selected_game() |>
+      pull(rank)
+  })
+  
+  output$vod_agent <- renderText({
+    selected_game() |>
+      pull(agent)
+  })
+  
+  output$vod_outcome <- renderText({
+    selected_game() |>
+      pull(outcome)
+  })
+  
+  output$vod_kdr <- renderText({
+    selected_game() |>
+      pull(kdr)
+  })
+  
+  output$plt_mini_kdr <- renderPlot({
+    curr <- selected_game() |>
+      pull(kdr)
+    
+    data |>
+      ggplot(aes(x = kdr)) +
+      geom_density(alpha = 0.4, fill = VAL_BLACK, linewidth = 1) +
+      geom_vline(xintercept = curr, color = VAL_RED, linewidth = 1.3) +
+      theme_void()
+    },
+    height = 60
+  )
+  
+  output$plt_mini_acs <- renderPlot({
+    curr <- selected_game() |>
+      pull(acs)
+    
+    data |>
+      ggplot(aes(x = acs)) +
+      geom_density(alpha = 0.4, fill = VAL_BLACK, linewidth = 1) +
+      geom_vline(xintercept = curr, color = VAL_RED, linewidth = 1.3) +
+      theme_void()
+    },
+    height = 60
+  )
+  
+  output$plt_mini_headshot <- renderPlot({
+    curr <- selected_game() |>
+      pull(headshot_pct)
+    
+    data |>
+      ggplot(aes(x = headshot_pct)) +
+      geom_density(alpha = 0.4, fill = VAL_BLACK, linewidth = 1) +
+      geom_vline(xintercept = curr, color = VAL_RED, linewidth = 1.3) +
+      theme_void()
+    },
+    height = 60
+  )
+  
+  output$plt_mini_avg_dmg <- renderPlot({
+    curr <- selected_game() |>
+      pull(avg_dmg)
+    
+    data |>
+      ggplot(aes(x = avg_dmg)) +
+      geom_density(alpha = 0.4, fill = VAL_BLACK, linewidth = 1) +
+      geom_vline(xintercept = curr, color = VAL_RED, linewidth = 1.3) +
+      theme_void()
+    },
+    height = 60
+  )
+  
+  output$vod_acs <- renderText({
+    selected_game() |>
+      pull(acs)
+  })
+  
+  output$vod_headshot <- renderText({
+    selected_game() |>
+      pull(headshot_pct)
+  })
+  
+  output$vod_avg_dmg <- renderText({
+    selected_game() |>
+      pull(avg_dmg)
+  })
+  
+  output$vod_window <- renderUI({
+    vod_url <- selected_game() |>
+      pull(vod)
+    
+    # convert vod url to embed-friendly version
+    embed_url <- vod_url |>
+      str_replace("youtu.be", "youtube.com/embed")
+    
+    tags$iframe(src = embed_url, height = "500")
+  })
 }

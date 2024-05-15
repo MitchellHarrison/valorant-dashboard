@@ -64,7 +64,7 @@ ui <- page_navbar(
     width = 300,
     shinyWidgets::chooseSliderSkin(
       skin = "Modern", 
-      color = lighten(VAL_BLACK, 0.5)
+      color = colorspace::lighten(VAL_BLACK, 0.5)
     ),
     
     h4("Global filters:", INFO_ICON) |>
@@ -161,7 +161,7 @@ ui <- page_navbar(
         width = 6,
         card(
           height = 300,
-          plotOutput("plt_winrate"),
+          plotOutput("plt_winrate")
         ),
         card(plotOutput("plt_headshot_kdr"))
       ),
@@ -254,5 +254,84 @@ ui <- page_navbar(
   nav_panel(
     title = "Data",
     DTOutput("data_table")
+  ),
+  
+  ####### VOD REVIEW PANEL #######
+  
+  nav_panel(
+    title = "VOD Review",
+    fluidRow(
+      column(
+        width = 3,
+        selectInput(
+          "vod_id",
+          "Game ID:",
+          choices = NULL,
+          selected = NULL
+        ),
+        
+        fluidRow(
+          column(
+            width = 6,
+            h6("Episode:"),
+            textOutput("vod_episode")
+          ),
+          column(
+            width = 6, 
+            h6("Act:"),
+            textOutput("vod_act")
+          )
+        ),
+        br(),
+        
+        fluidRow(
+          column(
+            width = 6,
+            h6("Agent:"),
+            textOutput("vod_agent")
+          ),
+          column(
+            width = 6, 
+            h6("Outcome:"),
+            textOutput("vod_outcome")
+          )
+        ),
+        br(),
+        
+        fluidRow(
+          h6("KDR:"),
+          textOutput("vod_kdr"),
+          plotOutput("plt_mini_kdr", height = 60)
+        ),
+        br(),
+        
+        fluidRow(
+          h6("ACS:"),
+          textOutput("vod_acs"),
+          plotOutput("plt_mini_acs", height = 60)
+        ),
+        br(),
+        
+        fluidRow(
+          h6("Headshot %:"),
+          textOutput("vod_headshot"),
+          plotOutput("plt_mini_headshot", height = 60)
+        ),
+        br(),
+        
+        fluidRow(
+          h6("Average Damage:"),
+          textOutput("vod_avg_dmg"),
+          plotOutput("plt_mini_avg_dmg", height = 60)
+        )
+      ),
+      
+      column(
+        width = 9,
+        card(
+          htmlOutput("vod_window")
+        )
+      )
+    )
   )
 )
