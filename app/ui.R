@@ -172,10 +172,10 @@ ui <- page_navbar(
     )
   ),
   
-  ####### MODELLING PANEL #######
+  ####### MODELING PANEL #######
   
   nav_panel(
-    title = "Modelling",
+    title = "Modeling",
     fluidRow(
       column(
         width = 3,

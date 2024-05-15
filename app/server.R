@@ -28,12 +28,21 @@ model_options <- c("Agent" = "agent", "Map" = "map", "Kills" = "kills",
                    "K/D Ratio" = "kdr", "Avg. Damage Delta" = "avg_dmg_delta", 
                    "Headshot %" = "headshot_pct", "Avg. Damage" = "avg_dmg", 
                    "ACS" = "acs", "Frag Number" = "num_frag")
-options(gargle_oauth_cache = ".secrets") # for authentication
-
+PLT_NO_DATA <- ggplot() +
+  annotate(
+    geom = "text", 
+    x = 0, 
+    y = 0, 
+    label = "No data available with these filters.",
+    size = 7
+    ) +
+  theme_void()
+  
 ####### authenticating with Google #######
 # Run gs4_auth() once, authenticate using the browser window that appears,
 # and if the app runs for you, you can permanently re-comment it out.
 
+options(gargle_oauth_cache = ".secrets") # for authentication
 # gs4_auth() # comment out if app is working
 gs4_deauth()
 gs4_auth(cache = ".secrets", email = Sys.getenv("EMAIL"))
@@ -45,6 +54,7 @@ DATA_URL <- paste0(
 )
 data <- read_sheet(DATA_URL) |>
   mutate(outcome = relevel(factor(outcome), ref = "Win"))
+
 
 ###############################
 ####### START OF SERVER #######
@@ -60,6 +70,10 @@ server <- function(input, output, session) {
     max_ep <- input$filter_episode[2]
     min_act <- input$filter_act[1]
     max_act <- input$filter_act[2]
+    min_kdr <- input$filter_kdr[1] 
+    max_kdr <- input$filter_kdr[2]
+    min_acs <- input$filter_acs[1]
+    max_acs <- input$filter_acs[2]
     min_frag <- input$filter_n_frag[1]
     max_frag <- input$filter_n_frag[2]
     
@@ -69,16 +83,14 @@ server <- function(input, output, session) {
         agent %in% input$filter_agent,
         episode >= min_ep & episode <= max_ep,
         act >= min_act & act <= max_act,
-        kdr >= input$filter_kdr[1] & kdr <= input$filter_kdr[2],
-        acs >= input$filter_acs[1] & acs <= input$filter_acs[2],
+        kdr >= min_kdr & kdr <= max_kdr,
+        acs >= min_acs & acs <= max_acs
         #num_frag >= min_frag & num_frag <= max_frag
       ) |>
       mutate(map = factor(map))
     if (input$filter_vod) {
       sel <- filter(sel, !is.na(vod))
     }
-    print("SEL_DATA:")
-    print(sel)
     sel
   })
   
@@ -146,126 +158,139 @@ server <- function(input, output, session) {
   
   # win rate plot
   output$plt_winrate <- renderPlot({
-    top <- sel_data() |>
-      group_by(agent) |>
-      summarise(n_games = n()) |>
-      arrange(desc(n_games)) |>
-      slice_head(n = 3)
+    if (nrow(sel_data()) == 0) {
+      PLT_NO_DATA
+    } else {
+      top <- sel_data() |>
+        group_by(agent) |>
+        summarise(n_games = n()) |>
+        arrange(desc(n_games)) |>
+        slice_head(n = 3)
     
-    outcome_data <- sel_data() |>
-      group_by(agent, outcome) |>
-      summarise(count = n()) |>
-      ungroup() |>
-      filter(
-        agent %in% top$agent) |>
-      pivot_wider(
-        id_cols = agent, 
-        names_from = outcome, 
-        values_from = count
-        ) |>
-      left_join(top) |>
-      mutate(winrate = Win / n_games) |>
-      arrange(desc(n_games)) |>
-      mutate(
-        agent = factor(agent, levels = unique(agent)) # order by number of games
-        ) |>
-      
-      ggplot(aes(x = agent, y = winrate)) +
-      geom_col(width = 0.5, fill = lighten(VAL_BLACK, 0.5)) +
-      geom_hline(yintercept = 0.5, linewidth = 1, color = color_line) +
-      geom_label(
-       aes(y = winrate, label = glue("{n_games} games")), 
-       vjust = 1,
-       fontface = "bold",
-       size = 4.5,
-       color = VAL_BLACK,
-       label.size = 0,
-       nudge_y = 0.1
-      ) +
-      coord_cartesian(ylim = c(0,1)) +
-      theme_minimal(base_size = PLOT_FONT_SIZE) +
-      labs(
-       x = element_blank(),
-       y = "Win rate",
-       title = "Win rate of most-played agents"
-      ) +
-      theme(
-        text = element_text(family = "Inter"),
-        axis.text = element_text(size = PLOT_FONT_SIZE - 3),
-        plot.background = element_blank(),
-        panel.background = element_blank()
-      )
+      sel_data() |>
+        group_by(agent, outcome) |>
+        summarise(count = n()) |>
+        ungroup() |>
+        filter(agent %in% top$agent) |>
+        pivot_wider(
+          id_cols = agent, 
+          names_from = outcome, 
+          values_from = count
+          ) |>
+        left_join(top) |>
+        mutate(winrate = Win / n_games) |>
+        arrange(desc(n_games)) |>
+        mutate(agent = factor(agent, levels = unique(agent))) |> # reorder bars
+        
+        ggplot(aes(x = agent, y = winrate)) +
+        geom_col(width = 0.5, fill = lighten(VAL_BLACK, 0.5)) +
+        geom_hline(yintercept = 0.5, linewidth = 1, color = color_line) +
+        geom_label(
+         aes(y = winrate, label = glue("{n_games} games")), 
+         vjust = 1,
+         fontface = "bold",
+         size = 4.5,
+         color = VAL_BLACK,
+         label.size = 0,
+         nudge_y = 0.1
+        ) +
+        coord_cartesian(ylim = c(0,1)) +
+        theme_minimal(base_size = PLOT_FONT_SIZE) +
+        labs(
+         x = element_blank(),
+         y = "Win rate",
+         title = "Win rate of most-played agents"
+        ) +
+        theme(
+          text = element_text(family = "Inter"),
+          axis.text = element_text(size = PLOT_FONT_SIZE - 3),
+          plot.background = element_blank(),
+          panel.background = element_blank()
+        )
+    }
   })
   
   # scatter plot between headshot percent and kill-death ratio
   output$plt_headshot_kdr <- renderPlot({
-    sel_data() |>
-      filter(outcome != "Draw") |>
-      ggplot(aes(x = headshot_pct, y = kdr, color = outcome)) +
-      geom_point(size = 2, alpha = 0.3) +
-      geom_smooth(method = "lm", se = FALSE) +
-      scale_color_manual(values = pal_win_loss) +
-      theme_minimal(base_size = PLOT_FONT_SIZE) +
-      labs(
-        x = "Headshot %",
-        y = "Kill / death ratio",
-        title = "KDR vs headshot percentage"
-        ) +
-      theme(
-        text = element_text(family = "Inter"),
-        legend.position = "top",
-        legend.title = element_blank(),
-        axis.text = element_text(size = PLOT_FONT_SIZE - 3),
-        plot.background = element_blank(),
-        panel.background = element_blank()
-      )
+    if (nrow(sel_data()) == 0) {
+      PLT_NO_DATA
+    } else {
+      sel_data() |>
+        filter(outcome != "Draw") |>
+        ggplot(aes(x = headshot_pct, y = kdr, color = outcome)) +
+        geom_point(size = 2, alpha = 0.3) +
+        geom_smooth(method = "lm", se = FALSE) +
+        scale_color_manual(values = pal_win_loss) +
+        theme_minimal(base_size = PLOT_FONT_SIZE) +
+        labs(
+          x = "Headshot %",
+          y = "Kill / death ratio",
+          title = "KDR vs headshot percentage"
+          ) +
+        theme(
+          text = element_text(family = "Inter"),
+          legend.position = "top",
+          legend.title = element_blank(),
+          axis.text = element_text(size = PLOT_FONT_SIZE - 3),
+          plot.background = element_blank(),
+          panel.background = element_blank()
+        )
+    }
   })
   
   # map kdr distribution
   output$plt_map_kdr <- renderPlot({
-    sel_data() |>
-      ggplot(aes(x = kdr, y = rev(map))) +
-      geom_boxplot(color = VAL_BLACK) +
-      geom_vline(xintercept = 1, linewidth = 0.8, color = color_line) +
-      scale_x_continuous(breaks = 0:round(max(sel_data()$kdr), 0)) +
-      theme_minimal(base_size = PLOT_FONT_SIZE) +
-      labs(
-        x = "Kill / death ratio",
-        y = element_blank(),
-        title = "Kill / death ratio by map"
-      ) +
-      theme(
-        text = element_text(family = "Inter"),
-        legend.position = "top",
-        legend.title = element_blank(),
-        axis.text = element_text(size = PLOT_FONT_SIZE - 3),
-        plot.background = element_blank(),
-        panel.background = element_blank()
-      )
+    if (nrow(sel_data()) == 0) {
+      PLT_NO_DATA
+    } else {
+      sel_data() |>
+        ggplot(aes(x = kdr, y = rev(map))) +
+        geom_boxplot(color = VAL_BLACK) +
+        geom_vline(xintercept = 1, linewidth = 0.8, color = color_line) +
+        scale_x_continuous(breaks = 0:round(max(sel_data()$kdr), 0)) +
+        theme_minimal(base_size = PLOT_FONT_SIZE) +
+        labs(
+          x = "Kill / death ratio",
+          y = element_blank(),
+          title = "Kill / death ratio by map"
+        ) +
+        theme(
+          text = element_text(family = "Inter"),
+          legend.position = "top",
+          legend.title = element_blank(),
+          axis.text = element_text(size = PLOT_FONT_SIZE - 3),
+          plot.background = element_blank(),
+          panel.background = element_blank()
+        )
+    }
   })
   
   # damage delta distribution plots
   output$plt_dmg_delta <- renderPlot({
-    sel_data() |>
-      filter(outcome != "Draw") |>
-      ggplot(aes(x = avg_dmg_delta, fill = outcome)) + 
-      geom_density(alpha = 0.4, color = VAL_BLACK) +
-      geom_vline(xintercept = 0, linewidth = 1, color = color_line) +
-      theme_minimal(base_size = PLOT_FONT_SIZE) +
-      scale_fill_manual(values = pal_win_loss) +
-      labs(
-        x = "Average damage delta",
-        y = element_blank(),
-        title = "Damage delta distribution by outcome"
-      ) +
-      theme(
-        text = element_text(family = "Inter"),
-        legend.position = "top",
-        legend.title = element_blank(),
-        axis.text = element_text(size = PLOT_FONT_SIZE - 3),
-        plot.background = element_blank(),
-        panel.background = element_blank()
-      )
+    if (nrow(sel_data()) == 0) {
+      PLT_NO_DATA
+    } else {
+      sel_data() |>
+        filter(outcome != "Draw") |>
+        ggplot(aes(x = avg_dmg_delta, fill = outcome)) + 
+        geom_density(alpha = 0.4, color = VAL_BLACK) +
+        geom_vline(xintercept = 0, linewidth = 1, color = color_line) +
+        theme_minimal(base_size = PLOT_FONT_SIZE) +
+        scale_fill_manual(values = pal_win_loss) +
+        labs(
+          x = "Average damage delta",
+          y = element_blank(),
+          title = "Damage delta distribution"
+        ) +
+        theme(
+          text = element_text(family = "Inter"),
+          legend.position = "top",
+          legend.title = element_blank(),
+          axis.text = element_text(size = PLOT_FONT_SIZE - 3),
+          plot.background = element_blank(),
+          panel.background = element_blank()
+        )
+    }
   })
   
   # most-played agent
