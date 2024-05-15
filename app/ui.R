@@ -7,6 +7,7 @@ library(plotly)
 thematic_shiny(font = "auto")
 
 ####### constants #######
+
 APP_TITLE <- "Valorant Ranked Tracker"
 BW_THEME <- "zephyr"
 VAL_RED <- "#FF4655"
@@ -15,8 +16,20 @@ model_options <- c("Agent", "Map", "Kills", "Deaths", "Assists", "K/D Ratio",
                    "Avg. Damage Delta", "Headshot %", "Avg. Damage", "ACS",
                    "Frag Number")
 INFO_ICON <- icon("circle-info", style = "opacity:0.3; font-size:15px")
+VOD_ISSUE_URL <- paste0(
+  "https://github.com/MitchellHarrison/valorant-dashboard/issues/new?",
+  "assignees=mitchellharrison&labels=public+vod+request&projects=&template=",
+  "PUBLIC-VOD.yml&title=Public+VOD+request"
+)
+VOD_PRIVACY_NOTE <- paste0(
+  "<em>Note: All of my VODs are private on YouTube by default. To request that ",
+  "a VOD be made public, submit a GitHub issue with the game ID ",
+  "<a href='", VOD_ISSUE_URL ,"'>here</a></em>."
+)
+print(VOD_PRIVACY_NOTE)
 
 ####### tooltips #######
+
 TT_HOW_TO_DELETE <- "To remove, left-click and press Backspace."
 TT_PROP_TRAIN <- paste(
   "This is the proportion of the data that is used for training the model.",
@@ -330,7 +343,13 @@ ui <- page_navbar(
         width = 9,
         card(
           htmlOutput("vod_window")
-        )
+        ),
+        
+        # VOD privacy note
+        HTML(paste0(
+          "<div style='padding-left: 60px; padding-right: 60px;",
+          "text-align:center;'>", VOD_PRIVACY_NOTE, "</div>"
+        ))
       )
     )
   )

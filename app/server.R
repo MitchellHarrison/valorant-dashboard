@@ -19,9 +19,6 @@ PLOT_FONT <- list(family = "Inter")
 VAL_RED <- "#FF4655"
 VAL_BLACK <- "#0F1923"
 
-TEST_URL <- "https://www.youtube.com/embed/Ly5Yc3nepDA?si=vgpabYevBj4qfXAS"
-TEST_URL_2 <- "https://www.youtube.com/embed/9eIsu2OLrsU"
-
 color_line <- VAL_RED
 color_loss <- VAL_RED
 color_win <- VAL_BLACK
