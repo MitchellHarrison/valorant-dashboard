@@ -70,7 +70,7 @@ TT_ROC_CURVE <- paste(
 
 ui <- page_navbar(
   title = APP_TITLE,
-  theme = bs_theme(version = 5, bootswatch = "zephyr"),
+  theme = bs_theme(version = 5, bootswatch = "zephyr", primary = VAL_RED),
   sidebar = sidebar(
     width = 300,
     shinyWidgets::chooseSliderSkin(
