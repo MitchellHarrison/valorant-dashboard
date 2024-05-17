@@ -3,7 +3,7 @@ This project relies on an email address that is stored in an `.Renviron` file.
 This email is used to authenticate your G-mail account, allowing a user to read
 the data from Google Sheets. Without this authentication, the app will not work.
 The app is also hosted publicly
-(here)[https://qmre3f-mitch0harrison.shinyapps.io/valorant-dashboard/]. Local
+[here](https://qmre3f-mitch0harrison.shinyapps.io/valorant-dashboard/). Local
 hosting is only required during development.
 
 ### Edit `.Renviron.example`
