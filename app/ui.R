@@ -7,12 +7,10 @@ library(plotly)
 ####### constants #######
 
 APP_TITLE <- "Valorant Ranked Tracker"
+REPO_URL <- "https://github.com/MitchellHarrison/valorant-dashboard"
 BW_THEME <- "quartz"
 VAL_RED <- "#FF4655"
 VAL_BLACK <- "#0F1923"
-model_options <- c("Agent", "Map", "Kills", "Deaths", "Assists", "K/D Ratio",
-                   "Avg. Damage Delta", "Headshot %", "Avg. Damage", "ACS",
-                   "Frag Number")
 INFO_ICON <- icon("circle-info", style = "opacity:0.3; font-size:15px;")
 VOD_ISSUE_URL <- paste0(
   "https://github.com/MitchellHarrison/valorant-dashboard/issues/new?",
@@ -24,6 +22,9 @@ VOD_PRIVACY_NOTE <- paste0(
   "a VOD be made public, submit a GitHub issue with the game ID ",
   "<a href='", VOD_ISSUE_URL ,"'>here</a></em>."
 )
+model_options <- c("Agent", "Map", "Kills", "Deaths", "Assists", "K/D Ratio",
+                   "Avg. Damage Delta", "Headshot %", "Avg. Damage", "ACS",
+                   "Frag Number")
 
 ####### tooltips #######
 
@@ -350,5 +351,10 @@ ui <- page_navbar(
   nav_panel(
     title = "Raw Data",
     DTOutput("data_table")
-  )
+  ),
+  
+  ####### REPO URL IN NAVBAR #######
+  
+  nav_spacer(),
+  nav_item(a(href = REPO_URL, "Made with 🤍 by Mitch Harrison."))
 )
