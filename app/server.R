@@ -379,6 +379,8 @@ server <- function(input, output, session) {
   # output raw data table
   output$data_table <- renderDT({
     sel_data() |>
+      select(!c(vod)) |>
+      mutate(date = format(lubridate::ymd(date), "%m-%d-%Y")) |>
       clean_names(case = "sentence")
     },
     rownames = FALSE,
