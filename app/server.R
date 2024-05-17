@@ -204,7 +204,9 @@ server <- function(input, output, session) {
           text = element_text(family = "Inter"),
           axis.text = element_text(size = PLOT_FONT_SIZE - 3),
           plot.background = element_blank(),
-          panel.background = element_blank()
+          panel.background = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.grid.major.x = element_blank()
         )
     }
   })
@@ -258,8 +260,8 @@ server <- function(input, output, session) {
           legend.position = "top",
           legend.title = element_blank(),
           axis.text = element_text(size = PLOT_FONT_SIZE - 3),
-          plot.background = element_blank(),
-          panel.background = element_blank()
+          panel.grid.minor = element_blank(),
+          panel.grid.major.y = element_blank()
         )
     }
   })
@@ -287,7 +289,9 @@ server <- function(input, output, session) {
           legend.title = element_blank(),
           axis.text = element_text(size = PLOT_FONT_SIZE - 3),
           plot.background = element_blank(),
-          panel.background = element_blank()
+          panel.background = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.grid.major.x = element_blank()
         )
     }
   })
