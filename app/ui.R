@@ -235,26 +235,46 @@ ui <- page_navbar(
             width = 6,
             h5("Significant factors", INFO_ICON) |>
               tooltip(TT_SIG_FACTORS),
-            DTOutput("significant_factors")
-          ),
-          column(
-            width = 6,
+            DTOutput("significant_factors"),
+            br(),
+            
             h5("Model performance", INFO_ICON) |>
               tooltip(TT_MODEL_PERF),
             DTOutput("conf_matrix")
-          )
-        ),
-        fluidRow(
-          column(
-            width = 6
           ),
+          
+          # ROC curve and performance stats
           column(
             width = 6,
-            card(
-              card_header("Model ROC curve:", INFO_ICON) |>
-                tooltip(TT_ROC_CURVE),
-              plotOutput("roc_curve")
-            )
+            
+            # ROC curve
+            fluidRow(
+              card(
+                card_header("Model ROC curve:", INFO_ICON) |>
+                  tooltip(TT_ROC_CURVE),
+                plotOutput("roc_curve")
+              )
+            ),
+            br(),
+            
+            # model performance statistics
+            fluidRow(
+              column(
+                width = 4,
+                h6("Training Points:"),
+                textOutput("training_points")
+              ),
+              column(
+                width = 4,
+                h6("Accuracy"),
+                textOutput("model_acc"),
+              ),
+              column(
+                width = 4,
+                h6("Precision"),
+                textOutput("model_precision")
+              )
+            ),
           )
         )
       )

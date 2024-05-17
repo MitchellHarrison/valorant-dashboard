@@ -346,14 +346,43 @@ server <- function(input, output, session) {
   })
   
   # create confusion matrix
-  output$conf_matrix <- renderDT({
+  conf_matrix <- reactive({
     mat <- conf_mat(results(), truth = truth, estimate = predicted)$table
     mat |>
-      as.matrix() |>
+      as.matrix()
+  })
+  
+  output$conf_matrix <- renderDT({
+    conf_matrix() |>
       datatable(
         rownames = FALSE,
         options = list(dom = "t")
       )
+  })
+  
+  # get model performance stats
+  output$model_acc <- renderText({
+    tp <- conf_matrix()[1,1]
+    total <- sum(conf_matrix())
+    paste0(round((tp / total), 3) * 100, "%")
+  })
+  
+  # get model performance stats
+  output$training_points <- renderText({
+    sum(conf_matrix())
+  })
+  
+  output$model_acc <- renderText({
+    tp <- conf_matrix()[1,1]
+    tn <- conf_matrix()[2,2]
+    total <- sum(conf_matrix())
+    paste0(round(((tp + tn) / total), 3) * 100, "%")
+  })
+  
+  output$model_precision <- renderText({
+    tp <- conf_matrix()[1,1]
+    fp <- conf_matrix()[2,1]
+    paste0(round(tp / (tp + fp), 3) * 100, "%")
   })
   
   # plot the ROC curve with AOC values
