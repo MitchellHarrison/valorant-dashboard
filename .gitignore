@@ -6,5 +6,6 @@
 *.Rproj
 
 rsconnect/
+source-sans-pro/
 test.qmd
 .secrets
