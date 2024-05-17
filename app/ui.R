@@ -2,20 +2,18 @@ library(bsicons)
 library(bslib)
 library(DT)
 library(shiny)
-library(thematic)
 library(plotly)
-thematic_shiny(font = "auto")
 
 ####### constants #######
 
 APP_TITLE <- "Valorant Ranked Tracker"
-BW_THEME <- "zephyr"
+BW_THEME <- "quartz"
 VAL_RED <- "#FF4655"
 VAL_BLACK <- "#0F1923"
 model_options <- c("Agent", "Map", "Kills", "Deaths", "Assists", "K/D Ratio",
                    "Avg. Damage Delta", "Headshot %", "Avg. Damage", "ACS",
                    "Frag Number")
-INFO_ICON <- icon("circle-info", style = "opacity:0.3; font-size:15px")
+INFO_ICON <- icon("circle-info", style = "opacity:0.3; font-size:15px;")
 VOD_ISSUE_URL <- paste0(
   "https://github.com/MitchellHarrison/valorant-dashboard/issues/new?",
   "assignees=mitchellharrison&labels=public+vod+request&projects=&template=",
@@ -26,7 +24,6 @@ VOD_PRIVACY_NOTE <- paste0(
   "a VOD be made public, submit a GitHub issue with the game ID ",
   "<a href='", VOD_ISSUE_URL ,"'>here</a></em>."
 )
-print(VOD_PRIVACY_NOTE)
 
 ####### tooltips #######
 
@@ -66,13 +63,14 @@ TT_ROC_CURVE <- paste(
   "performing. The AUC value is considered \"acceptable\" between 0.7 and 0.8,",
   "\"excellent\" between 0.8 and 0.9, and \"outstanding\" above 0.9."
 )
+
 ###########################
 ####### START OF UI #######
 ###########################
 
 ui <- page_navbar(
-  theme = theme,
   title = APP_TITLE,
+  theme = bs_theme(version = 5, bootswatch = "zephyr"),
   sidebar = sidebar(
     width = 300,
     shinyWidgets::chooseSliderSkin(
