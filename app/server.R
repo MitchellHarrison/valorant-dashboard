@@ -445,7 +445,7 @@ server <- function(input, output, session) {
   
   output$vod_rank <- renderText({
     selected_game() |>
-      pull(rank_after_match)
+      pull(rank)
   })
   
   output$vod_agent <- renderText({
