@@ -54,6 +54,7 @@ DATA_URL <- paste0(
 )
 data <- read_sheet(DATA_URL) |>
   mutate(outcome = relevel(factor(outcome), ref = "Win"))
+AGENTS <- unique(data$agent)
 
 ###############################
 ####### START OF SERVER #######
@@ -311,8 +312,17 @@ server <- function(input, output, session) {
     initial_split(model_data, prop = input$prop_train / 100)
   })
   
-  train_data <- reactive({training(data_split())})
-  test_data <- reactive({testing(data_split())})
+  train_data <- reactive({
+    tr_data <- training(data_split())
+    tr_data$agent <- factor(tr_data$agent, levels = AGENTS)
+    tr_data
+  })
+  
+  test_data <- reactive({
+    te_data <- training(data_split())
+    te_data$agent <- factor(te_data$agent, levels = AGENTS)
+    te_data
+  })
   
   # construct the model
   model <- reactive({
