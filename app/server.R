@@ -18,6 +18,7 @@ PLOT_FONT_SIZE <- 15
 PLOT_FONT <- list(family = "Inter")
 VAL_RED <- "#FF4655"
 VAL_BLACK <- "#0F1923"
+CHARLIE <- "https://www.youtube.com/embed/_OBlgSz8sSM?si=zfmClnCoYTNPlsfV"
 
 color_line <- VAL_RED
 color_loss <- VAL_RED
@@ -52,8 +53,10 @@ DATA_URL <- paste0(
   "https://docs.google.com/spreadsheets/d/1EdN0USO2oTRaY77LUpduruFPNn",
   "_00L8Ea8wjGBiZybY/edit?usp=sharing"
 )
+
 data <- read_sheet(DATA_URL) |>
   mutate(outcome = relevel(factor(outcome), ref = "Win"))
+pro_vods <- read_sheet(DATA_URL, sheet = "pro_vods") 
 AGENTS <- unique(data$agent)
 
 ###############################
@@ -77,6 +80,8 @@ server <- function(input, output, session) {
     min_frag <- input$filter_n_frag[1]
     max_frag <- input$filter_n_frag[2]
     
+    shiny::req(input$filter_map)
+    shiny::req(input$filter_agent)
     sel <- data |>
       filter(
         map %in% input$filter_map,
@@ -130,7 +135,7 @@ server <- function(input, output, session) {
       "filter_act", 
       min = min(data$act),
       max = max(data$act),
-      value = c(min(data$act), max(data$episode))
+      value = c(min(data$act), max(data$act))
     )
   })
   
@@ -429,8 +434,9 @@ server <- function(input, output, session) {
   ####### VOD REVIEW TAB ELEMENTS #######
   
   games_with_vods <- reactive({
-    sel_data() |>
+    games <- sel_data() |>
       filter(!is.na(vod))
+    games
   })
   
   shiny::observe({
@@ -443,6 +449,7 @@ server <- function(input, output, session) {
   })
   
   selected_game <- reactive({ 
+    shiny::req(input$vod_id)
     sel_data() |>
       filter(game_id == input$vod_id) |>
       mutate(outcome = as.character(outcome))
@@ -548,6 +555,56 @@ server <- function(input, output, session) {
     embed_url <- vod_url |>
       str_replace("youtu.be", "youtube.com/embed")
     
-    tags$iframe(src = embed_url, height = "500", allowfullscreen = "TRUE")
+    tags$iframe(src = embed_url, height = "100%", allowfullscreen = "TRUE")
+  })
+  
+  # get pro vod list and display them
+  
+  pro_vod_options <- reactive({
+    vod_agent <- selected_game() |>
+      pull(agent)
+    vod_map <- selected_game() |>
+      pull(map)
+    
+    opts <- pro_vods |>
+      filter(agent == vod_agent, map == vod_map)
+    opts <- opts |>
+      mutate(display = paste("Vod", game_id, "|", player, agent, map))
+    opts
+  })
+  
+  shiny::observe({
+    if (nrow(pro_vod_options()) == 0) {
+      choices <- c("None available")
+      selected <- c("None available")
+    } else {
+      choices <- sort(pro_vod_options()$display)
+      selected <- min(pro_vod_options()$display)
+    }
+    updateSelectInput(
+      session = session, 
+      inputId = "pro_vod_id", 
+      choices = choices,
+      selected = selected
+    )
+  })
+  
+  selected_pro_game <- reactive({
+    if (nrow(pro_vod_options()) == 0) {
+      vid <- tibble(embed_url = CHARLIE)
+    } else {
+      unique_id <- as.numeric(strsplit(input$pro_vod_id, " ")[[1]][2])
+      vid <- pro_vod_options() |>
+        filter(game_id == unique_id)
+    }
+    vid
+  })
+  
+  output$pro_vod_window <- renderUI({
+    tags$iframe(
+      src = selected_pro_game()$embed_url, 
+      height = "100%", 
+      allowfullscreen = "TRUE"
+    )
   })
 }

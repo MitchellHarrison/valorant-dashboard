@@ -18,9 +18,8 @@ VOD_ISSUE_URL <- paste0(
   "PUBLIC-VOD.yml&title=Public+VOD+request"
 )
 VOD_PRIVACY_NOTE <- paste0(
-  "<em>Note: All of my VODs are private on YouTube by default. To request that ",
-  "a VOD be made public, submit a GitHub issue with the game ID ",
-  "<a href='", VOD_ISSUE_URL ,"'>here</a></em>."
+  "<em>Note: To request that a VOD be made public, submit a GitHub issue with",
+  " the game ID <a href='", VOD_ISSUE_URL ,"'>here</a></em>."
 )
 model_options <- c("Agent", "Map", "Kills", "Deaths", "Assists", "K/D Ratio",
                    "Avg. Damage Delta", "Headshot %", "Avg. Damage", "ACS",
@@ -38,9 +37,9 @@ TT_PROP_TRAIN <- paste(
 )
 TT_CONFIDENCE_LEVEL <- paste(
   "This changes the level at which a factor is considered \"significant\".",
-  "Lower values mean more significant variables are displayed. Higher values",
-  "mean more variables will be displayed, but they may have less influence",
-  "on the outcome. Recommended: 0.05"
+  "Lower values mean fewer (but more significant) variables are displayed.",
+  "Higher values mean more variables will be displayed, but they may have less", 
+  "influence on the outcome. Recommended: 0.05"
 )
 TT_MODEL_FACTORS <- paste(
   "These are the variables that the model is testing. To remove any,",
@@ -115,8 +114,8 @@ ui <- page_navbar(
       "filter_episode",
       "Episode(s):",
       min = 1,
-      max = 8,
-      value = c(1,8),
+      max = 9,
+      value = c(1,9),
       ticks = FALSE
     ),
     
@@ -295,6 +294,13 @@ ui <- page_navbar(
           selected = NULL
         ),
         
+        selectInput(
+          "pro_vod_id",
+          "Pro Game:",
+          choices = NULL,
+          selected = NULL
+        ),
+        
         fluidRow(
           column(
             width = 6,
@@ -352,16 +358,24 @@ ui <- page_navbar(
       ),
       
       column(
-        width = 9,
-        card(
-          htmlOutput("vod_window")
+        width = 8,
+        fluidRow(
+          #width = 4,
+          #style = "height: 30vh;",
+          h5("Player VOD:"),
+          # VOD privacy note
+          HTML(paste0(
+            "<div style='padding-left: 60px; padding-right: 60px;",
+            "text-align:center;'>", VOD_PRIVACY_NOTE, "</div>"
+          )),
+          card(htmlOutput("vod_window"), height = "38vh")
         ),
-        
-        # VOD privacy note
-        HTML(paste0(
-          "<div style='padding-left: 60px; padding-right: 60px;",
-          "text-align:center;'>", VOD_PRIVACY_NOTE, "</div>"
-        ))
+        fluidRow(
+          #width = 4,
+          #style = "height: 30vh;",
+          h5("Pro VOD:"),
+          card(htmlOutput("pro_vod_window"), height = "38vh")
+        )
       )
     )
   ),
