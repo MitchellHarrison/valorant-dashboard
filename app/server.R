@@ -55,7 +55,8 @@ DATA_URL <- paste0(
 )
 
 data <- read_sheet(DATA_URL) |>
-  mutate(outcome = relevel(factor(outcome), ref = "Win"))
+  mutate(outcome = relevel(factor(outcome), ref = "Win")) |>
+  filter(if_all(.cols = -vod, ~ !is.na(.)))
 pro_vods <- read_sheet(DATA_URL, sheet = "pro_vods") 
 AGENTS <- unique(data$agent)
 
