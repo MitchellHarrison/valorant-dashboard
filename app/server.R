@@ -70,6 +70,13 @@ server <- function(input, output, session) {
   ####### FILTER DATA USING SIDEBAR FILTERS #######
   
   sel_data <- reactive({
+    shiny::req(input$filter_map)
+    shiny::req(input$filter_agent)
+    shiny::req(input$filter_act)
+    shiny::req(input$filter_kdr)
+    shiny::req(input$filter_acs)
+    shiny::req(input$filter_n_frag)
+    
     min_ep <- input$filter_episode[1]
     max_ep <- input$filter_episode[2]
     min_act <- input$filter_act[1]
@@ -81,8 +88,6 @@ server <- function(input, output, session) {
     min_frag <- input$filter_n_frag[1]
     max_frag <- input$filter_n_frag[2]
     
-    shiny::req(input$filter_map)
-    shiny::req(input$filter_agent)
     sel <- data |>
       filter(
         map %in% input$filter_map,
@@ -308,13 +313,14 @@ server <- function(input, output, session) {
   # split data into testing/training data
   data_split <- reactive({
     cols <- unname(model_options[input$model_factors])
-    model_data <- sel_data() |>
+    model_data <- data |>
       filter(outcome != "Draw") |>
       select(c(outcome, cols)) |>
       mutate(
         outcome = factor(outcome, levels = c("Win", "Loss")),
         outcome = relevel(outcome, ref = "Win") 
       )
+    
     initial_split(model_data, prop = input$prop_train / 100)
   })
   
@@ -325,8 +331,9 @@ server <- function(input, output, session) {
   })
   
   test_data <- reactive({
-    te_data <- training(data_split())
-    te_data$agent <- factor(te_data$agent, levels = AGENTS)
+    tr_agents <- unique(train_data()$agent)
+    te_data <- training(data_split()) |>
+      filter(agent %in% tr_agents)
     te_data
   })
   
@@ -562,6 +569,10 @@ server <- function(input, output, session) {
   # get pro vod list and display them
   
   pro_vod_options <- reactive({
+    if (nrow(selected_game()) != 1) {
+      return(tibble())  # Or NULL or some placeholder
+    }
+    
     vod_agent <- selected_game() |>
       pull(agent)
     vod_map <- selected_game() |>
